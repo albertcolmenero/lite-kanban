@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Lite Kanban</title>
+    <style>
+      body {
+        font: 13px system-ui, sans-serif;
+        margin: 0;
+        padding: 10px;
+        width: 320px;
+        box-sizing: border-box;
+      }
+      label {
+        display: block;
+        margin-top: 8px;
+        font-weight: 600;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 4px;
+        padding: 6px 8px;
+      }
+      button {
+        margin-top: 10px;
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 8px;
+        color: #666;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      #projects {
+        margin-top: 10px;
+        max-height: 200px;
+        overflow: auto;
+        border: 1px solid #ddd;
+        padding: 6px;
+      }
+      .row {
+        padding: 4px 0;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+      }
+      .row:last-child {
+        border-bottom: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Setup: sign in on your Lite Kanban app, open /extension-setup, copy the session token.
+      Set API base URL (e.g. http://localhost:3000) and save. Server must list your
+      chrome-extension://<id> origin in EXTENSION_ALLOWED_ORIGINS.
+    -->
+    <label for="baseUrl">API base URL</label>
+    <input
+      id="baseUrl"
+      type="url"
+      placeholder="https://your-app.vercel.app"
+      autocomplete="off"
+    />
+    <label for="token">Bearer token</label>
+    <input id="token" type="password" placeholder="Session token" autocomplete="off" />
+    <button id="save" type="button">Save settings</button>
+    <button id="load" type="button">Load projects</button>
+    <div id="status"></div>
+    <div id="projects"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>

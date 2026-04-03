@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Lite Kanban",
+  "version": "0.1.0",
+  "description": "List projects and tasks via Lite Kanban API (Bearer session token).",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Lite Kanban"
+  },
+  "permissions": ["storage"],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://*/*"
+  ]
+}
