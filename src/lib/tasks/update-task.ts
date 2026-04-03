@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ActivityType } from "@/lib/activity/event-types";
 import { logActivity } from "@/lib/activity/log-activity";
+import { dateFromDateOnlyInput } from "@/lib/tasks/due-date";
 import type { updateTaskSchema } from "@/lib/tasks/schemas";
 import type { z } from "zod";
 
@@ -17,11 +18,16 @@ export async function updateOwnedTask(userId: string, input: Input) {
     name?: string;
     description?: string | null;
     priorityId?: string;
+    dueDate?: Date | null;
   } = {};
 
   if (input.name !== undefined) data.name = input.name;
   if (input.description !== undefined) {
     data.description = input.description === "" ? null : input.description;
+  }
+  if (input.dueDate !== undefined) {
+    data.dueDate =
+      input.dueDate === "" ? null : dateFromDateOnlyInput(input.dueDate);
   }
 
   const priorityChanged =
@@ -37,7 +43,9 @@ export async function updateOwnedTask(userId: string, input: Input) {
   }
 
   const textChanged =
-    input.name !== undefined || input.description !== undefined;
+    input.name !== undefined ||
+    input.description !== undefined ||
+    input.dueDate !== undefined;
   if (textChanged) {
     await logActivity(prisma, {
       userId,
@@ -47,6 +55,7 @@ export async function updateOwnedTask(userId: string, input: Input) {
       metadata: {
         name: input.name !== undefined,
         description: input.description !== undefined,
+        dueDate: input.dueDate !== undefined,
       },
     });
   }

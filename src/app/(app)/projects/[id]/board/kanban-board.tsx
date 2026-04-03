@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { COLUMN_PREFIX } from "@/lib/board/constants";
 import { moveTaskAction } from "@/app/(app)/projects/[id]/board-actions";
+import { formatDueDateShort } from "@/lib/tasks/due-date";
 import type {
   SerializedBoardTask,
   SerializedStatus,
@@ -40,6 +41,7 @@ function SortableCard({
   task: SerializedBoardTask;
   onOpen: (id: string) => void;
 }) {
+  const dueLabel = formatDueDateShort(task.dueDate);
   const {
     attributes,
     listeners,
@@ -65,6 +67,7 @@ function SortableCard({
         <button
           type="button"
           className="mt-0.5 cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          data-drag-handle
           {...attributes}
           {...listeners}
           aria-label="Drag to move"
@@ -77,22 +80,27 @@ function SortableCard({
           onClick={() => onOpen(task.id)}
         >
           <p className="font-medium leading-snug">{task.name}</p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            <Badge variant="secondary" className="text-[0.65rem] font-normal">
+              {task.priority.name}
+            </Badge>
+            {dueLabel ? (
+              <Badge variant="outline" className="text-[0.65rem] font-normal">
+                {dueLabel}
+              </Badge>
+            ) : null}
+            {task.labels.map(({ label }) => (
+              <Badge
+                key={label.id}
+                variant="outline"
+                className="text-[0.65rem] font-normal"
+                style={{ borderColor: label.color, color: label.color }}
+              >
+                {label.name}
+              </Badge>
+            ))}
+          </div>
         </button>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-1">
-        <Badge variant="secondary" className="text-[0.65rem] font-normal">
-          {task.priority.name}
-        </Badge>
-        {task.labels.map(({ label }) => (
-          <Badge
-            key={label.id}
-            variant="outline"
-            className="text-[0.65rem] font-normal"
-            style={{ borderColor: label.color, color: label.color }}
-          >
-            {label.name}
-          </Badge>
-        ))}
       </div>
     </Card>
   );
@@ -102,10 +110,12 @@ function ColumnDrop({
   status,
   tasks,
   onOpen,
+  onRequestNewTask,
 }: {
   status: SerializedStatus;
   tasks: SerializedBoardTask[];
   onOpen: (id: string) => void;
+  onRequestNewTask: (statusId: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: colId(status.id) });
   const ids = tasks.map((t) => t.id);
@@ -113,11 +123,18 @@ function ColumnDrop({
   return (
     <div
       ref={setNodeRef}
-      className={`flex w-[min(100%,280px)] shrink-0 flex-col rounded-xl bg-muted/40 m-2 p-4 ring-1 ring-border/60 ${isOver ? "ring-2 ring-primary/40" : ""}`}
+      className={`group/col flex w-[min(100%,280px)] shrink-0 flex-col rounded-xl bg-muted/40 m-2 p-4 ring-1 ring-border/60 ${isOver ? "ring-2 ring-primary/40" : ""}`}
     >
-      <div className="mb-2 flex items-center justify-between px-1">
-        <h3 className="text-sm font-semibold">{status.name}</h3>
-        <span className="text-xs tabular-nums text-muted-foreground">
+      <div className="mb-2 flex items-center justify-between gap-2 px-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <h3 className="text-sm font-semibold">{status.name}</h3>
+          {status.isFinal ? (
+            <Badge variant="outline" className="text-[0.6rem] font-normal">
+              Final
+            </Badge>
+          ) : null}
+        </div>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
           {tasks.length}
         </span>
       </div>
@@ -128,6 +145,13 @@ function ColumnDrop({
           ))}
         </div>
       </SortableContext>
+      <button
+        type="button"
+        onClick={() => onRequestNewTask(status.id)}
+        className="mt-2 flex min-h-[44px] w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-border/80 bg-background/40 text-xs font-medium text-muted-foreground opacity-0 pointer-events-none transition-opacity group-hover/col:pointer-events-auto group-hover/col:opacity-100 hover:border-primary/30 hover:bg-muted/50 hover:text-foreground"
+      >
+        Add task
+      </button>
     </div>
   );
 }
@@ -137,11 +161,13 @@ export function KanbanBoard({
   statuses,
   tasks,
   onOpenTask,
+  onRequestNewTask,
 }: {
   projectId: string;
   statuses: SerializedStatus[];
   tasks: SerializedBoardTask[];
   onOpenTask: (id: string) => void;
+  onRequestNewTask: (statusId: string) => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -238,6 +264,7 @@ export function KanbanBoard({
             status={s}
             tasks={byStatus.get(s.id) ?? []}
             onOpen={onOpenTask}
+            onRequestNewTask={onRequestNewTask}
           />
         ))}
       </div>

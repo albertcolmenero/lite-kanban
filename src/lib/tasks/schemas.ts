@@ -1,11 +1,27 @@
 import { z } from "zod";
 
+const dateOnlyString = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date");
+
+/** Optional HTML date value: empty or omitted means no date (create) or unchanged (use other fields). */
+export const optionalDueDateInputSchema = z
+  .union([dateOnlyString, z.literal("")])
+  .optional();
+
+/** Update: empty string clears due date; omitted leaves unchanged. */
+export const updateDueDateInputSchema = z
+  .union([dateOnlyString, z.literal("")])
+  .optional();
+
 export const createTaskSchema = z.object({
   projectId: z.string(),
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(5000).optional(),
   statusId: z.string().optional(),
   priorityId: z.string().optional(),
+  dueDate: optionalDueDateInputSchema,
+  labelIds: z.array(z.string()).optional(),
 });
 
 export const updateTaskSchema = z.object({
@@ -14,6 +30,7 @@ export const updateTaskSchema = z.object({
   description: z.union([z.string().trim().max(5000), z.literal("")]).optional(),
   priorityId: z.string().optional(),
   labelIds: z.array(z.string()).optional(),
+  dueDate: updateDueDateInputSchema,
 });
 
 export const commentSchema = z.object({
@@ -44,6 +61,8 @@ export const apiCreateTaskBodySchema = z.object({
   description: z.string().trim().max(5000).optional(),
   statusId: z.string().optional(),
   priorityId: z.string().optional(),
+  dueDate: optionalDueDateInputSchema,
+  labelIds: z.array(z.string()).optional(),
 });
 
 /** JSON body for PATCH /api/tasks/[id] — either move (statusId + toIndex) or field updates. */
@@ -55,6 +74,7 @@ export const apiPatchTaskBodySchema = z
     description: z.union([z.string().trim().max(5000), z.literal("")]).optional(),
     priorityId: z.string().optional(),
     labelIds: z.array(z.string()).optional(),
+    dueDate: updateDueDateInputSchema,
   })
   .superRefine((data, ctx) => {
     const hasStatus = data.statusId !== undefined;
@@ -70,7 +90,8 @@ export const apiPatchTaskBodySchema = z
       data.name !== undefined ||
       data.description !== undefined ||
       data.priorityId !== undefined ||
-      data.labelIds !== undefined;
+      data.labelIds !== undefined ||
+      data.dueDate !== undefined;
     if (isMove && isUpdate) {
       ctx.addIssue({
         code: "custom",

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { dispatchOpenProjectTask } from "@/lib/board/open-task-event";
@@ -61,7 +60,10 @@ export function GlobalProjectHeaderStrip({ payload }: { payload: ProjectHeaderPa
       <h1 className="hidden min-w-0 max-w-[140px] truncate text-sm font-semibold tracking-tight text-foreground sm:block lg:max-w-[220px] xl:max-w-xs">
         {payload.projectName}
       </h1>
-      <div className="relative min-w-0 flex-1">
+      <div
+        className="relative min-w-0 flex-1"
+        data-project-task-search
+      >
         <Search
           className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
           aria-hidden

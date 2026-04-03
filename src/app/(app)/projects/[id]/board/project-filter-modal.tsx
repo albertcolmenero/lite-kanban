@@ -115,14 +115,14 @@ export function ProjectFilterModal({
               <Button
                 type="button"
                 size="sm"
-                variant={view === "kanban" ? "default" : "outline"}
+                variant={view === "grid" ? "default" : "outline"}
                 disabled={pending}
                 className="flex-1"
                 onClick={() => {
-                  push({ view: "kanban" });
+                  push({ view: undefined });
                 }}
               >
-                Kanban
+                Grid
               </Button>
               <Button
                 type="button"

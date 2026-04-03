@@ -8,6 +8,7 @@ export const createProjectStatusSchema = z.object({
 export const updateProjectStatusSchema = z.object({
   id: z.string(),
   name: z.string().trim().min(1).max(80),
+  isFinal: z.boolean(),
 });
 
 export const deleteProjectStatusSchema = z.object({

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { put } from "@vercel/blob";
 import { ActivityType } from "@/lib/activity/event-types";
 import { logActivity } from "@/lib/activity/log-activity";
+import { LABEL_COLOR_OPTIONS } from "@/lib/board/constants";
 import { prisma } from "@/lib/db";
 import { createProjectLabel } from "@/lib/labels/create-project-label";
 import { deleteOwnedProjectLabel } from "@/lib/labels/delete-project-label";
@@ -54,12 +55,26 @@ export async function createTaskBoardAction(
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized" };
 
+  let createLabelIds: string[] | undefined;
+  if (formData.has("labelIds")) {
+    const labelRaw = formData.get("labelIds");
+    createLabelIds =
+      typeof labelRaw === "string"
+        ? labelRaw.split(",").filter(Boolean)
+        : [];
+  }
+
+  const dueRaw = formData.get("dueDate");
+  const dueDate = typeof dueRaw === "string" ? dueRaw : undefined;
+
   const parsed = createTaskSchema.safeParse({
     projectId: formData.get("projectId"),
     name: formData.get("name"),
     description: formData.get("description") || undefined,
     statusId: formData.get("statusId") || undefined,
     priorityId: formData.get("priorityId") || undefined,
+    dueDate,
+    labelIds: createLabelIds,
   });
   if (!parsed.success) return { error: "Invalid task" };
 
@@ -86,6 +101,12 @@ export async function updateTaskBoardAction(
         : [];
   }
 
+  const dueRaw = formData.get("dueDate");
+  const dueDate =
+    formData.has("dueDate") && typeof dueRaw === "string"
+      ? dueRaw
+      : undefined;
+
   const parsed = updateTaskSchema.safeParse({
     id: formData.get("id"),
     name: formData.get("name") || undefined,
@@ -94,6 +115,7 @@ export async function updateTaskBoardAction(
       : undefined,
     priorityId: formData.get("priorityId") || undefined,
     labelIds,
+    dueDate,
   });
   if (!parsed.success) return { error: "Invalid input" };
 
@@ -199,6 +221,44 @@ export async function createLabelBoardAction(
 
   revalidatePath(path(parsed.data.projectId));
   return { ok: true };
+}
+
+const DEFAULT_INLINE_LABEL_COLOR =
+  LABEL_COLOR_OPTIONS[0]?.value ?? "#64748b";
+
+export type CreateLabelInlineResult =
+  | { ok: true; label: { id: string; name: string; color: string } }
+  | { ok: false; error: string };
+
+/** Programmatic create (e.g. multiselect “create row”); returns the new label for optimistic UI. */
+export async function createLabelInlineAction(
+  projectId: string,
+  name: string,
+): Promise<CreateLabelInlineResult> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false, error: "Unauthorized" };
+
+  const parsed = createLabelSchema.safeParse({
+    projectId,
+    name,
+    color: DEFAULT_INLINE_LABEL_COLOR,
+  });
+  if (!parsed.success) return { ok: false, error: "Invalid label name" };
+
+  const result = await createProjectLabel(
+    userId,
+    parsed.data.projectId,
+    parsed.data.name,
+    parsed.data.color,
+  );
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath(path(parsed.data.projectId));
+  const label = result.label;
+  return {
+    ok: true,
+    label: { id: label.id, name: label.name, color: label.color },
+  };
 }
 
 export async function updateLabelBoardAction(

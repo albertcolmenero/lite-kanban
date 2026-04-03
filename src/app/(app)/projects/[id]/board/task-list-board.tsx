@@ -2,25 +2,21 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import type {
-  SerializedBoardTask,
-  SerializedStatus,
-} from "@/app/(app)/projects/[id]/board/types";
+import type { SerializedBoardTask } from "@/app/(app)/projects/[id]/board/types";
 
 export function TaskListBoard({
-  statuses,
+  projectNamesById,
   tasks,
   onOpenTask,
 }: {
-  statuses: SerializedStatus[];
+  projectNamesById: Record<string, string>;
   tasks: SerializedBoardTask[];
   onOpenTask: (id: string) => void;
 }) {
-  const order = new Map(statuses.map((s, i) => [s.id, i]));
   const sorted = [...tasks].sort((a, b) => {
-    const da = order.get(a.statusId) ?? 99;
-    const db = order.get(b.statusId) ?? 99;
-    if (da !== db) return da - db;
+    const pa = a.priority.sortOrder;
+    const pb = b.priority.sortOrder;
+    if (pa !== pb) return pb - pa;
     return a.position - b.position;
   });
 
@@ -30,32 +26,33 @@ export function TaskListBoard({
         <Card
           key={t.id}
           size="sm"
-          className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4"
         >
           <button
             type="button"
-            className="min-w-0 text-left font-medium hover:underline"
+            className="min-w-0 flex-1 text-left font-medium hover:underline sm:min-w-48"
             onClick={() => onOpenTask(t.id)}
           >
             {t.name}
           </button>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="font-normal">
-              {t.status.name}
-            </Badge>
-            <Badge variant="secondary" className="font-normal">
-              {t.priority.name}
-            </Badge>
-            {t.labels.map(({ label }) => (
-              <Badge
-                key={label.id}
-                variant="outline"
-                className="font-normal"
-                style={{ borderColor: label.color, color: label.color }}
-              >
-                {label.name}
-              </Badge>
-            ))}
+          <p className="shrink-0 text-sm text-muted-foreground sm:w-40 sm:text-right">
+            {projectNamesById[t.projectId] ?? "—"}
+          </p>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:justify-end">
+            {t.labels.length === 0 ? (
+              <span className="text-sm text-muted-foreground">—</span>
+            ) : (
+              t.labels.map(({ label }) => (
+                <Badge
+                  key={label.id}
+                  variant="outline"
+                  className="font-normal"
+                  style={{ borderColor: label.color, color: label.color }}
+                >
+                  {label.name}
+                </Badge>
+              ))
+            )}
           </div>
         </Card>
       ))}

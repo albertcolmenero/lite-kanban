@@ -20,7 +20,7 @@ export async function listProjectsWithStatusBreakdown(
 ): Promise<ProjectListRow[]> {
   const projects = await prisma.project.findMany({
     where: { userId },
-    orderBy: { updatedAt: "desc" },
+    orderBy: { name: "asc" },
     include: {
       statuses: { orderBy: { sortOrder: "asc" } },
     },

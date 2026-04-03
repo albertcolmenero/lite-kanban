@@ -54,6 +54,7 @@ export async function updateProjectStatusAction(
   const parsed = updateProjectStatusSchema.safeParse({
     id: formData.get("id"),
     name: formData.get("name"),
+    isFinal: formData.get("isFinal") === "on",
   });
   if (!parsed.success) return { error: "Invalid input" };
 
@@ -61,6 +62,7 @@ export async function updateProjectStatusAction(
     userId,
     parsed.data.id,
     parsed.data.name,
+    parsed.data.isFinal,
   );
   if (!result.ok) return { error: result.error };
 

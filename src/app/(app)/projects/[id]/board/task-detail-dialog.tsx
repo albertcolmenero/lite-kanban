@@ -1,10 +1,18 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useActionState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   addCommentAction,
   addSubtaskAction,
+  createLabelInlineAction,
   deleteTaskBoardAction,
   toggleSubtaskAction,
   type BoardActionState,
@@ -17,17 +25,14 @@ import type {
   SerializedPriority,
 } from "@/app/(app)/projects/[id]/board/types";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { dueDateIsoToInputValue } from "@/lib/tasks/due-date";
+import { SearchableMultiSelect } from "@/components/ui/searchable-multi-select";
 
 function formatActivityType(t: string) {
   return t.replace(/_/g, " ");
@@ -52,6 +57,27 @@ function TaskDetailPanel({
   const [labelSet, setLabelSet] = useState(
     () => new Set(task.labels.map((l) => l.label.id)),
   );
+  const [extraLabels, setExtraLabels] = useState<SerializedProjectLabel[]>([]);
+
+  useEffect(() => {
+    setExtraLabels((prev) =>
+      prev.filter((e) => !projectLabels.some((l) => l.id === e.id)),
+    );
+  }, [projectLabels]);
+
+  useEffect(() => {
+    setExtraLabels([]);
+  }, [task.id]);
+
+  const taskLabelIdsKey = useMemo(
+    () =>
+      [...task.labels.map((l) => l.label.id)].sort().join("\0"),
+    [task.labels],
+  );
+
+  useEffect(() => {
+    setLabelSet(new Set(task.labels.map((l) => l.label.id)));
+  }, [task.id, taskLabelIdsKey]);
 
   const [updState, updAction, updPending] = useActionState(
     updateTaskBoardAction,
@@ -72,14 +98,51 @@ function TaskDetailPanel({
 
   const labelIdsValue = useMemo(() => [...labelSet].join(","), [labelSet]);
 
-  function toggleLabel(id: string) {
-    setLabelSet((prev) => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-  }
+  const mergedProjectLabels = useMemo(() => {
+    const seen = new Set<string>();
+    const out: SerializedProjectLabel[] = [];
+    for (const lb of projectLabels) {
+      if (seen.has(lb.id)) continue;
+      seen.add(lb.id);
+      out.push(lb);
+    }
+    for (const lb of extraLabels) {
+      if (seen.has(lb.id)) continue;
+      seen.add(lb.id);
+      out.push(lb);
+    }
+    return out;
+  }, [projectLabels, extraLabels]);
+
+  const labelOptions = useMemo(
+    () =>
+      mergedProjectLabels.map((lb) => ({
+        value: lb.id,
+        label: lb.name,
+        color: lb.color,
+      })),
+    [mergedProjectLabels],
+  );
+
+  const onCreateLabel = useCallback(
+    async (trimmed: string) => {
+      const r = await createLabelInlineAction(projectId, trimmed);
+      if (!r.ok) return { ok: false as const, error: r.error };
+      setExtraLabels((prev) =>
+        prev.some((l) => l.id === r.label.id) ? prev : [...prev, r.label],
+      );
+      router.refresh();
+      return {
+        ok: true as const,
+        option: {
+          value: r.label.id,
+          label: r.label.name,
+          color: r.label.color,
+        },
+      };
+    },
+    [projectId, router],
+  );
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col">
@@ -111,6 +174,16 @@ function TaskDetailPanel({
               />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="tdued">Due date</Label>
+              <Input
+                id="tdued"
+                name="dueDate"
+                type="date"
+                defaultValue={dueDateIsoToInputValue(task.dueDate)}
+                className="w-full"
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="tpr">Priority</Label>
               <select
                 id="tpr"
@@ -125,31 +198,23 @@ function TaskDetailPanel({
                 ))}
               </select>
             </div>
-            {projectLabels.length > 0 ? (
-              <div className="space-y-2">
-                <Label>Labels</Label>
-                <div className="flex flex-col gap-2">
-                  {projectLabels.map((lb) => (
-                    <label
-                      key={lb.id}
-                      className="flex cursor-pointer items-center gap-2 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        className="size-4 rounded border-input"
-                        checked={labelSet.has(lb.id)}
-                        onChange={() => toggleLabel(lb.id)}
-                      />
-                      <span
-                        className="inline-block size-2 rounded-full"
-                        style={{ backgroundColor: lb.color }}
-                      />
-                      {lb.name}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ) : null}
+            <div className="space-y-2">
+              <Label htmlFor="task-detail-labels">Labels</Label>
+              <SearchableMultiSelect
+                id="task-detail-labels"
+                options={labelOptions}
+                value={[...labelSet]}
+                onValueChange={(ids) => setLabelSet(new Set(ids))}
+                placeholder="Search or type to add a label…"
+                searchPlaceholder="Add more…"
+                emptyText={
+                  mergedProjectLabels.length === 0
+                    ? "Type a name and pick Create to add your first label"
+                    : "No labels match"
+                }
+                onCreateOption={onCreateLabel}
+              />
+            </div>
             {updState.error ? (
               <p className="text-sm text-destructive">{updState.error}</p>
             ) : null}

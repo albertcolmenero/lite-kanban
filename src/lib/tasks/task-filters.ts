@@ -40,11 +40,14 @@ export function parseTaskFiltersFromSearchParams(
   };
 }
 
+export type BoardViewMode = "grid" | "list";
+
+/** Grid layout (kanban board). `view=list` selects the priority list; `kanban`/`grid`/unset default to grid. */
 export function boardViewFromSearchParams(
   sp: Record<string, string | string[] | undefined>,
-): "kanban" | "list" {
+): BoardViewMode {
   const v = spVal(sp, "view");
-  return v === "list" ? "list" : "kanban";
+  return v === "list" ? "list" : "grid";
 }
 
 /** Map URLSearchParams to the record shape used by parseTaskFiltersFromSearchParams (API routes). */

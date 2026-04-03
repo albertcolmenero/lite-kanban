@@ -6,6 +6,7 @@ export type SerializedBoardTask = {
   statusId: string;
   priorityId: string;
   position: number;
+  dueDate: string | null;
   status: { id: string; name: string; sortOrder: number };
   priority: { id: string; name: string; sortOrder: number };
   labels: { label: { id: string; name: string; color: string } }[];
@@ -41,6 +42,7 @@ export type SerializedStatus = {
   id: string;
   name: string;
   sortOrder: number;
+  isFinal: boolean;
 };
 
 export type SerializedPriority = {

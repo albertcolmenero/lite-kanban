@@ -56,6 +56,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     description: data.description,
     priorityId: data.priorityId,
     labelIds: data.labelIds,
+    dueDate: data.dueDate,
   });
   if (!updateParsed.success) {
     return jsonWithCors({ error: "Invalid update" }, { status: 400 }, auth.cors);

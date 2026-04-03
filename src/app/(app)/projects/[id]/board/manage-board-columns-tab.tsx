@@ -73,7 +73,10 @@ function StatusNameUpdateForm({ status }: { status: SerializedStatus }) {
   }, [state.ok, router]);
 
   return (
-    <form action={action} className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
+    <form
+      action={action}
+      className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
+    >
       <input type="hidden" name="id" value={status.id} />
       <div className="min-w-0 flex-1 space-y-1">
         <Label htmlFor={`st-${status.id}`} className="sr-only">
@@ -88,6 +91,16 @@ function StatusNameUpdateForm({ status }: { status: SerializedStatus }) {
           className="h-8 text-sm"
         />
       </div>
+      <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground sm:shrink-0">
+        <input
+          type="checkbox"
+          name="isFinal"
+          value="on"
+          defaultChecked={status.isFinal}
+          className="size-4 rounded border-input"
+        />
+        Final column
+      </label>
       <Button type="submit" size="sm" variant="secondary" disabled={pending}>
         {pending ? "…" : "Save"}
       </Button>

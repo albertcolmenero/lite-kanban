@@ -32,6 +32,7 @@ export async function updateOwnedProjectStatus(
   userId: string,
   statusId: string,
   name: string,
+  isFinal: boolean,
 ) {
   const row = await prisma.projectStatus.findFirst({
     where: { id: statusId, project: { userId } },
@@ -42,7 +43,7 @@ export async function updateOwnedProjectStatus(
   try {
     await prisma.projectStatus.update({
       where: { id: row.id },
-      data: { name },
+      data: { name, isFinal },
     });
   } catch {
     return { ok: false as const, error: "A column with that name already exists" };
