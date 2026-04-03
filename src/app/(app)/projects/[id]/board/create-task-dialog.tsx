@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useActionState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   createLabelInlineAction,
@@ -202,12 +208,80 @@ export function CreateTaskDialog({
   );
 
   useEffect(() => {
+    // #region agent log
+    fetch("http://127.0.0.1:7799/ingest/d0877993-cce7-4746-af40-c3c53f505f88", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "3c39b6",
+      },
+      body: JSON.stringify({
+        sessionId: "3c39b6",
+        runId: "pre-fix",
+        hypothesisId: "H1",
+        location: "create-task-dialog.tsx:log-state",
+        message: "create dialog action state snapshot",
+        data: {
+          open,
+          stateOk: state.ok,
+          stateError: state.error,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, [open, state, state.ok]);
+
+  useEffect(() => {
     if (!state.ok) return;
+    // #region agent log
+    fetch("http://127.0.0.1:7799/ingest/d0877993-cce7-4746-af40-c3c53f505f88", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "3c39b6",
+      },
+      body: JSON.stringify({
+        sessionId: "3c39b6",
+        runId: "pre-fix",
+        hypothesisId: "H1",
+        location: "create-task-dialog.tsx:effect-close",
+        message: "calling onOpenChange(false) from state.ok effect",
+        data: { open, stateOk: state.ok },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
     onOpenChange(false);
   }, [state.ok, onOpenChange]);
 
+  const handleCreateOpenChange = useCallback(
+    (v: boolean) => {
+      // #region agent log
+      fetch("http://127.0.0.1:7799/ingest/d0877993-cce7-4746-af40-c3c53f505f88", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Debug-Session-Id": "3c39b6",
+        },
+        body: JSON.stringify({
+          sessionId: "3c39b6",
+          runId: "pre-fix",
+          hypothesisId: "H5",
+          location: "create-task-dialog.tsx:onOpenChange",
+          message: "CreateTaskDialog onOpenChange from Radix",
+          data: { nextOpen: v },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+      onOpenChange(v);
+    },
+    [onOpenChange],
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleCreateOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>New task</DialogTitle>

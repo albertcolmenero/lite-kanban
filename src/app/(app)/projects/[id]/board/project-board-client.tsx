@@ -83,6 +83,27 @@ export function ProjectBoardClient({
   }, []);
 
   useEffect(() => {
+    // #region agent log
+    fetch("http://127.0.0.1:7799/ingest/d0877993-cce7-4746-af40-c3c53f505f88", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "3c39b6",
+      },
+      body: JSON.stringify({
+        sessionId: "3c39b6",
+        runId: "pre-fix",
+        hypothesisId: "H4",
+        location: "project-board-client.tsx:board-state",
+        message: "board modal/task ids",
+        data: { createOpen, openTaskId },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, [createOpen, openTaskId]);
+
+  useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key.toLowerCase() !== "c") return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;

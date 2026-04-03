@@ -407,8 +407,33 @@ export function TaskDetailDialog({
 }) {
   if (!task) return null;
 
+  const handleDetailOpenChange = useCallback(
+    (v: boolean) => {
+      // #region agent log
+      fetch("http://127.0.0.1:7799/ingest/d0877993-cce7-4746-af40-c3c53f505f88", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Debug-Session-Id": "3c39b6",
+        },
+        body: JSON.stringify({
+          sessionId: "3c39b6",
+          runId: "pre-fix",
+          hypothesisId: "H3",
+          location: "task-detail-dialog.tsx:onOpenChange",
+          message: "TaskDetailDialog onOpenChange",
+          data: { nextOpen: v, taskId: task.id },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+      onOpenChange(v);
+    },
+    [onOpenChange, task.id],
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDetailOpenChange}>
       <DialogContent className="flex max-h-[min(92vh,760px)] min-h-0 flex-col gap-4 overflow-hidden p-6 pb-6 sm:max-w-lg">
         <TaskDetailPanel
           key={task.id}
