@@ -111,13 +111,13 @@ export function ProjectFilterModal({
             <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Layout
             </Label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 size="sm"
                 variant={view === "grid" ? "default" : "outline"}
                 disabled={pending}
-                className="flex-1"
+                className="min-w-[4.5rem] flex-1"
                 onClick={() => {
                   push({ view: undefined });
                 }}
@@ -129,12 +129,24 @@ export function ProjectFilterModal({
                 size="sm"
                 variant={view === "list" ? "default" : "outline"}
                 disabled={pending}
-                className="flex-1"
+                className="min-w-[4.5rem] flex-1"
                 onClick={() => {
                   push({ view: "list" });
                 }}
               >
                 List
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={view === "inbox" ? "default" : "outline"}
+                disabled={pending}
+                className="min-w-[4.5rem] flex-1"
+                onClick={() => {
+                  push({ view: "inbox" });
+                }}
+              >
+                Inbox
               </Button>
             </div>
           </div>

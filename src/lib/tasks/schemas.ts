@@ -28,6 +28,8 @@ export const updateTaskSchema = z.object({
   id: z.string(),
   name: z.string().trim().min(1).max(200).optional(),
   description: z.union([z.string().trim().max(5000), z.literal("")]).optional(),
+  /** Board column (`ProjectStatus`); uses move semantics when changed. */
+  statusId: z.string().optional(),
   priorityId: z.string().optional(),
   labelIds: z.array(z.string()).optional(),
   dueDate: updateDueDateInputSchema,

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ActivityType } from "@/lib/activity/event-types";
 import { logActivity } from "@/lib/activity/log-activity";
+import { moveTaskToPosition } from "@/lib/tasks/move-task";
 import { dateFromDateOnlyInput } from "@/lib/tasks/due-date";
 import type { updateTaskSchema } from "@/lib/tasks/schemas";
 import type { z } from "zod";
@@ -100,6 +101,32 @@ export async function updateOwnedTask(userId: string, input: Input) {
         });
       });
     }
+  }
+
+  if (
+    input.statusId !== undefined &&
+    input.statusId !== existing.statusId
+  ) {
+    const targetStatus = await prisma.projectStatus.findFirst({
+      where: { id: input.statusId, projectId: existing.projectId },
+    });
+    if (!targetStatus) {
+      return { ok: false as const, error: "Invalid column" };
+    }
+    const indexAtEnd = await prisma.task.count({
+      where: {
+        projectId: existing.projectId,
+        statusId: input.statusId,
+        id: { not: existing.id },
+      },
+    });
+    const moved = await moveTaskToPosition(
+      userId,
+      existing.id,
+      input.statusId,
+      indexAtEnd,
+    );
+    if (!moved.ok) return moved;
   }
 
   return { ok: true as const };

@@ -4,6 +4,13 @@ import { ProjectsPageClient } from "@/app/(app)/projects/projects-page-client";
 import { listProjectBoardMetaForUser } from "@/lib/projects/list-project-board-meta-for-user";
 import { listProjectsWithStatusBreakdown } from "@/lib/projects/list-projects-with-status-breakdown";
 import { listAllTasksForUserBoard } from "@/lib/tasks/list-all-tasks-for-user";
+import { getInboxPreferencesForScope } from "@/lib/inbox/get-inbox-preferences";
+import { inboxPreferencesScopeProjectsOverview } from "@/lib/inbox/inbox-table-scope";
+import { listInboxTasksForUserBoard } from "@/lib/tasks/list-inbox-tasks-for-user";
+import {
+  boardViewFromSearchParams,
+  parseTaskFiltersFromSearchParams,
+} from "@/lib/tasks/task-filters";
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -14,17 +21,25 @@ export default async function ProjectsPage({ searchParams }: Props) {
   if (!userId) redirect("/sign-in");
 
   const sp = await searchParams;
+  const view = boardViewFromSearchParams(sp);
+  const filters = parseTaskFiltersFromSearchParams(sp);
 
-  const [projects, tasksRaw, boardMetaRows] = await Promise.all([
+  const [projects, tasksRaw, boardMetaRows, inboxPrefsResult] = await Promise.all([
     listProjectsWithStatusBreakdown(userId),
-    listAllTasksForUserBoard(userId),
+    view === "inbox"
+      ? listInboxTasksForUserBoard(userId, filters)
+      : listAllTasksForUserBoard(userId),
     listProjectBoardMetaForUser(userId),
+    getInboxPreferencesForScope(
+      userId,
+      inboxPreferencesScopeProjectsOverview(),
+    ),
   ]);
 
   const boardMetaByProjectId = Object.fromEntries(
     boardMetaRows.map((m) => [
       m.id,
-      { labels: m.labels, priorities: m.priorities },
+      { labels: m.labels, priorities: m.priorities, statuses: m.statuses },
     ]),
   );
 
@@ -34,6 +49,8 @@ export default async function ProjectsPage({ searchParams }: Props) {
       allTasks: tasksRaw,
       boardMetaByProjectId,
       searchParamsRecord: sp,
+      inboxPreferences: inboxPrefsResult.prefs,
+      inboxPreferencesFromDb: inboxPrefsResult.fromDb,
     }),
   );
 
@@ -43,6 +60,8 @@ export default async function ProjectsPage({ searchParams }: Props) {
       allTasks={serialized.allTasks}
       boardMetaByProjectId={serialized.boardMetaByProjectId}
       searchParamsRecord={serialized.searchParamsRecord}
+      inboxPreferencesInitial={serialized.inboxPreferences}
+      inboxPreferencesFromDb={serialized.inboxPreferencesFromDb}
     />
   );
 }

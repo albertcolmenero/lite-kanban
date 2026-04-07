@@ -5,7 +5,7 @@ import { useCallback, useMemo, useTransition } from "react";
 import { boardViewFromSearchParams } from "@/lib/tasks/task-filters";
 import { Button } from "@/components/ui/button";
 import { mergeSearchParams } from "@/lib/url/merge-search-params";
-import { LayoutGrid, List } from "lucide-react";
+import { Inbox, LayoutGrid, List } from "lucide-react";
 
 export function ProjectsViewToggle() {
   const router = useRouter();
@@ -58,6 +58,18 @@ export function ProjectsViewToggle() {
       >
         <List className="size-4 shrink-0" aria-hidden />
         <span className="hidden sm:inline">List</span>
+      </Button>
+      <Button
+        type="button"
+        variant={view === "inbox" ? "secondary" : "ghost"}
+        size="sm"
+        className="h-8 gap-1.5 rounded-sm px-2.5 shadow-none"
+        disabled={pending}
+        aria-pressed={view === "inbox"}
+        onClick={() => push({ view: "inbox" })}
+      >
+        <Inbox className="size-4 shrink-0" aria-hidden />
+        <span className="hidden sm:inline">Inbox</span>
       </Button>
     </div>
   );

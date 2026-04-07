@@ -4,6 +4,12 @@ export type ProjectBoardMetaRow = {
   id: string;
   labels: { id: string; name: string; color: string }[];
   priorities: { id: string; name: string; sortOrder: number }[];
+  statuses: {
+    id: string;
+    name: string;
+    sortOrder: number;
+    isFinal: boolean;
+  }[];
 };
 
 export async function listProjectBoardMetaForUser(
@@ -15,6 +21,7 @@ export async function listProjectBoardMetaForUser(
       id: true,
       labels: { orderBy: { name: "asc" } },
       priorities: { orderBy: { sortOrder: "asc" } },
+      statuses: { orderBy: { sortOrder: "asc" } },
     },
   });
 }

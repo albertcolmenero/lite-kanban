@@ -14,6 +14,7 @@ export function ProjectBoardTopBar({
   projectId,
   projectName,
   projectDescription,
+  projectColor,
   statuses,
   priorities,
   labels,
@@ -22,6 +23,7 @@ export function ProjectBoardTopBar({
   projectId: string;
   projectName: string;
   projectDescription: string | null;
+  projectColor: string | null;
   statuses: SerializedStatus[];
   priorities: SerializedPriority[];
   labels: SerializedProjectLabel[];
@@ -41,6 +43,7 @@ export function ProjectBoardTopBar({
           projectId={projectId}
           projectName={projectName}
           projectDescription={projectDescription}
+          projectColor={projectColor}
           labels={labels}
           statuses={statuses}
         />

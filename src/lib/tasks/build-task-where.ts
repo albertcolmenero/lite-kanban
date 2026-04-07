@@ -1,11 +1,20 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { TaskFilterState } from "@/lib/tasks/task-filters";
 
-export function buildTaskWhere(
-  projectId: string,
+export type BuildTaskWhereOptions = {
+  /** Restrict to tasks whose status is not marked final (pending / inbox). */
+  inboxPendingOnly?: boolean;
+};
+
+function collectFilterParts(
   filters: TaskFilterState,
-): Prisma.TaskWhereInput {
-  const parts: Prisma.TaskWhereInput[] = [{ projectId }];
+  options?: BuildTaskWhereOptions,
+): Prisma.TaskWhereInput[] {
+  const parts: Prisma.TaskWhereInput[] = [];
+
+  if (options?.inboxPendingOnly) {
+    parts.push({ status: { isFinal: false } });
+  }
 
   if (filters.search?.length) {
     const s = filters.search.trim();
@@ -31,6 +40,32 @@ export function buildTaskWhere(
     });
   }
 
+  return parts;
+}
+
+export function buildTaskWhere(
+  projectId: string,
+  filters: TaskFilterState,
+  options?: BuildTaskWhereOptions,
+): Prisma.TaskWhereInput {
+  const parts: Prisma.TaskWhereInput[] = [
+    { projectId },
+    ...collectFilterParts(filters, options),
+  ];
+  if (parts.length === 1) return parts[0] as Prisma.TaskWhereInput;
+  return { AND: parts };
+}
+
+/** All tasks across projects owned by the user (for cross-project list / inbox). */
+export function buildUserTaskWhere(
+  userId: string,
+  filters: TaskFilterState,
+  options?: BuildTaskWhereOptions,
+): Prisma.TaskWhereInput {
+  const parts: Prisma.TaskWhereInput[] = [
+    { project: { userId } },
+    ...collectFilterParts(filters, options),
+  ];
   if (parts.length === 1) return parts[0] as Prisma.TaskWhereInput;
   return { AND: parts };
 }

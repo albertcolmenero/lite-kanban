@@ -2,12 +2,16 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { InboxDataTable } from "@/components/inbox/inbox-data-table";
+import type { InboxPreferencesPersistedV1 } from "@/lib/inbox/inbox-preferences-schema";
+import { inboxPreferencesScopeProjectsOverview } from "@/lib/inbox/inbox-table-scope";
 import { TaskDetailDialog } from "@/app/(app)/projects/[id]/board/task-detail-dialog";
 import { TaskListBoard } from "@/app/(app)/projects/[id]/board/task-list-board";
 import type {
   SerializedBoardTask,
   SerializedPriority,
   SerializedProjectLabel,
+  SerializedStatus,
 } from "@/app/(app)/projects/[id]/board/types";
 import { CreateProjectDialog } from "@/app/(app)/projects/create-project-dialog";
 import { DeleteProjectButton } from "@/app/(app)/projects/delete-project-button";
@@ -21,11 +25,16 @@ import {
 } from "@/components/ui/card";
 import { ProjectsViewToggle } from "@/components/projects-view-toggle";
 import type { ProjectListRow } from "@/lib/projects/list-projects-with-status-breakdown";
+import {
+  PROJECT_TINT_ALPHA,
+  projectColorToRgba,
+} from "@/lib/projects/project-color";
 import { boardViewFromSearchParams } from "@/lib/tasks/task-filters";
 
 type ProjectBoardMeta = {
   labels: SerializedProjectLabel[];
   priorities: SerializedPriority[];
+  statuses: SerializedStatus[];
 };
 
 export function ProjectsPageClient({
@@ -33,11 +42,15 @@ export function ProjectsPageClient({
   allTasks,
   boardMetaByProjectId,
   searchParamsRecord,
+  inboxPreferencesInitial,
+  inboxPreferencesFromDb,
 }: {
   projects: ProjectListRow[];
   allTasks: SerializedBoardTask[];
   boardMetaByProjectId: Record<string, ProjectBoardMeta>;
   searchParamsRecord: Record<string, string | string[] | undefined>;
+  inboxPreferencesInitial: InboxPreferencesPersistedV1;
+  inboxPreferencesFromDb: boolean;
 }) {
   const view = boardViewFromSearchParams(searchParamsRecord);
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
@@ -47,17 +60,31 @@ export function ProjectsPageClient({
     [projects],
   );
 
+  const projectColorsById = useMemo(
+    () => Object.fromEntries(projects.map((p) => [p.id, p.color ?? null])),
+    [projects],
+  );
+
   const openTask = useMemo(() => {
     if (!openTaskId) return null;
     return allTasks.find((t) => t.id === openTaskId) ?? null;
   }, [allTasks, openTaskId]);
 
-  const dialogMeta = openTask
-    ? (boardMetaByProjectId[openTask.projectId] ?? {
-        labels: [],
-        priorities: [],
-      })
-    : { labels: [] as SerializedProjectLabel[], priorities: [] as SerializedPriority[] };
+  const dialogMeta = useMemo(() => {
+    if (!openTask) {
+      return {
+        labels: [] as SerializedProjectLabel[],
+        priorities: [] as SerializedPriority[],
+        statuses: [] as SerializedStatus[],
+      };
+    }
+    const raw = boardMetaByProjectId[openTask.projectId];
+    return {
+      labels: raw?.labels ?? [],
+      priorities: raw?.priorities ?? [],
+      statuses: raw?.statuses ?? [],
+    };
+  }, [openTask, boardMetaByProjectId]);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-6">
@@ -67,7 +94,9 @@ export function ProjectsPageClient({
           <p className="text-sm text-muted-foreground">
             {view === "grid"
               ? "Task counts by status for each board."
-              : "All your tasks, sorted by priority."}
+              : view === "inbox"
+                ? "Pending tasks in a filterable, sortable table."
+                : "All your tasks, sorted by priority."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -124,7 +153,19 @@ export function ProjectsPageClient({
                     ))}
                   </div>
                 </CardContent>
-                <CardFooter className="mt-auto border-t border-border/60 pt-4">
+                <CardFooter
+                  className="mt-auto border-t border-border/60 pt-4"
+                  style={
+                    p.color
+                      ? {
+                          backgroundColor: projectColorToRgba(
+                            p.color,
+                            PROJECT_TINT_ALPHA,
+                          ),
+                        }
+                      : undefined
+                  }
+                >
                   <Link
                     href={`/projects/${p.id}`}
                     className="text-sm font-medium text-primary hover:underline"
@@ -139,9 +180,21 @@ export function ProjectsPageClient({
       ) : allTasks.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 px-6 py-12 text-center">
           <p className="text-sm text-muted-foreground">
-            No tasks yet. Open a project to add tasks.
+            {view === "inbox"
+              ? "No pending tasks. Tasks in a final column stay out of the inbox."
+              : "No tasks yet. Open a project to add tasks."}
           </p>
         </div>
+      ) : view === "inbox" ? (
+        <InboxDataTable
+          projectNamesById={projectNamesById}
+          projectColorsById={projectColorsById}
+          tasks={allTasks}
+          preferencesScope={inboxPreferencesScopeProjectsOverview()}
+          initialPreferences={inboxPreferencesInitial}
+          preferencesFromDb={inboxPreferencesFromDb}
+          onOpenTask={(id) => setOpenTaskId(id)}
+        />
       ) : (
         <TaskListBoard
           projectNamesById={projectNamesById}
@@ -159,6 +212,7 @@ export function ProjectsPageClient({
         projectId={openTask?.projectId ?? ""}
         projectLabels={dialogMeta.labels}
         priorities={dialogMeta.priorities}
+        statuses={dialogMeta.statuses}
       />
     </div>
   );

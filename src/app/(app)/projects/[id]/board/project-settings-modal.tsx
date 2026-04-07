@@ -24,12 +24,14 @@ export function ProjectSettingsModal({
   projectId,
   projectName,
   projectDescription,
+  projectColor,
   labels,
   statuses,
 }: {
   projectId: string;
   projectName: string;
   projectDescription: string | null;
+  projectColor: string | null;
   labels: SerializedProjectLabel[];
   statuses: SerializedStatus[];
 }) {
@@ -98,6 +100,7 @@ export function ProjectSettingsModal({
               projectId={projectId}
               name={projectName}
               description={projectDescription}
+              color={projectColor}
               onSaved={handleSaved}
             />
           </TabsContent>

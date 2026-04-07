@@ -23,7 +23,9 @@ import type {
   SerializedBoardTask,
   SerializedProjectLabel,
   SerializedPriority,
+  SerializedStatus,
 } from "@/app/(app)/projects/[id]/board/types";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -43,14 +45,17 @@ function TaskDetailPanel({
   projectId,
   projectLabels,
   priorities,
+  statuses: statusesProp,
   onOpenChange,
 }: {
   task: SerializedBoardTask;
   projectId: string;
   projectLabels: SerializedProjectLabel[];
   priorities: SerializedPriority[];
+  statuses?: SerializedStatus[];
   onOpenChange: (v: boolean) => void;
 }) {
+  const statuses = statusesProp ?? [];
   const router = useRouter();
   const [, startTransition] = useTransition();
 
@@ -58,6 +63,7 @@ function TaskDetailPanel({
     () => new Set(task.labels.map((l) => l.label.id)),
   );
   const [extraLabels, setExtraLabels] = useState<SerializedProjectLabel[]>([]);
+  const [labelsEditorOpen, setLabelsEditorOpen] = useState(false);
 
   useEffect(() => {
     setExtraLabels((prev) =>
@@ -67,6 +73,7 @@ function TaskDetailPanel({
 
   useEffect(() => {
     setExtraLabels([]);
+    setLabelsEditorOpen(false);
   }, [task.id]);
 
   const taskLabelIdsKey = useMemo(
@@ -147,8 +154,8 @@ function TaskDetailPanel({
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col">
       
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-4">
+      <ScrollArea className="min-h-0 flex-1 pr-1">
+        <div className="space-y-4 pr-4">
           <form action={updAction} className="space-y-3">
             <input type="hidden" name="id" value={task.id} />
             <input type="hidden" name="projectId" value={projectId} />
@@ -184,6 +191,26 @@ function TaskDetailPanel({
               />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="tst">Column</Label>
+              <select
+                id="tst"
+                name="statusId"
+                defaultValue={task.statusId}
+                className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+              >
+                {statuses.length > 0
+                  ? statuses.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                        {s.isFinal ? " (final)" : ""}
+                      </option>
+                    ))
+                  : (
+                      <option value={task.statusId}>{task.status.name}</option>
+                    )}
+              </select>
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="tpr">Priority</Label>
               <select
                 id="tpr"
@@ -200,20 +227,64 @@ function TaskDetailPanel({
             </div>
             <div className="space-y-2">
               <Label htmlFor="task-detail-labels">Labels</Label>
-              <SearchableMultiSelect
-                id="task-detail-labels"
-                options={labelOptions}
-                value={[...labelSet]}
-                onValueChange={(ids) => setLabelSet(new Set(ids))}
-                placeholder="Search or type to add a label…"
-                searchPlaceholder="Add more…"
-                emptyText={
-                  mergedProjectLabels.length === 0
-                    ? "Type a name and pick Create to add your first label"
-                    : "No labels match"
-                }
-                onCreateOption={onCreateLabel}
-              />
+              {!labelsEditorOpen ? (
+                <button
+                  type="button"
+                  id="task-detail-labels"
+                  className="flex w-full min-h-10 items-start justify-between gap-3 rounded-lg border border-input bg-transparent px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted/40"
+                  onClick={() => setLabelsEditorOpen(true)}
+                >
+                  <div className="flex min-w-0 flex-1 flex-wrap gap-1">
+                    {labelSet.size === 0 ? (
+                      <span className="text-muted-foreground">
+                        No labels — click to add or search
+                      </span>
+                    ) : (
+                      mergedProjectLabels
+                        .filter((lb) => labelSet.has(lb.id))
+                        .map((lb) => (
+                          <Badge
+                            key={lb.id}
+                            variant="outline"
+                            className="font-normal"
+                            style={{ borderColor: lb.color, color: lb.color }}
+                          >
+                            {lb.name}
+                          </Badge>
+                        ))
+                    )}
+                  </div>
+                  <span className="shrink-0 pt-0.5 text-xs text-muted-foreground">
+                    Edit
+                  </span>
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <SearchableMultiSelect
+                    id="task-detail-labels"
+                    variant="popover"
+                    options={labelOptions}
+                    value={[...labelSet]}
+                    onValueChange={(ids) => setLabelSet(new Set(ids))}
+                    placeholder="Search or type to add a label…"
+                    searchPlaceholder="Add more…"
+                    emptyText={
+                      mergedProjectLabels.length === 0
+                        ? "Type a name and pick Create to add your first label"
+                        : "No labels match"
+                    }
+                    onCreateOption={onCreateLabel}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setLabelsEditorOpen(false)}
+                  >
+                    Done
+                  </Button>
+                </div>
+              )}
             </div>
             {updState.error ? (
               <p className="text-sm text-destructive">{updState.error}</p>
@@ -397,6 +468,7 @@ export function TaskDetailDialog({
   projectId,
   projectLabels,
   priorities,
+  statuses,
 }: {
   task: SerializedBoardTask | null;
   open: boolean;
@@ -404,6 +476,7 @@ export function TaskDetailDialog({
   projectId: string;
   projectLabels: SerializedProjectLabel[];
   priorities: SerializedPriority[];
+  statuses?: SerializedStatus[];
 }) {
   if (!task) return null;
 
@@ -441,6 +514,7 @@ export function TaskDetailDialog({
           projectId={projectId}
           projectLabels={projectLabels}
           priorities={priorities}
+          statuses={statuses ?? []}
           onOpenChange={onOpenChange}
         />
       </DialogContent>

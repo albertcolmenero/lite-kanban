@@ -7,6 +7,8 @@ export type SerializedBoardTask = {
   priorityId: string;
   position: number;
   dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
   status: { id: string; name: string; sortOrder: number };
   priority: { id: string; name: string; sortOrder: number };
   labels: { label: { id: string; name: string; color: string } }[];

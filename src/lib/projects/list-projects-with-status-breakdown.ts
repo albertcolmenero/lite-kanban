@@ -11,6 +11,7 @@ export type ProjectListRow = {
   id: string;
   name: string;
   description: string | null;
+  color: string | null;
   updatedAt: Date;
   statuses: ProjectStatusBreakdown[];
 };
@@ -48,6 +49,7 @@ export async function listProjectsWithStatusBreakdown(
       id: p.id,
       name: p.name,
       description: p.description,
+      color: p.color,
       updatedAt: p.updatedAt,
       statuses: p.statuses.map((s) => ({
         id: s.id,

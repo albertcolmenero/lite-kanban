@@ -52,6 +52,7 @@ export async function updateProjectAction(
     description: formData.has("description")
       ? String(formData.get("description"))
       : undefined,
+    color: formData.has("color") ? String(formData.get("color")) : undefined,
   });
   if (!parsed.success) {
     return { error: "Invalid input" };

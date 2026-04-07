@@ -9,10 +9,14 @@ export async function updateOwnedProject(userId: string, input: UpdateProjectInp
     return { ok: false as const, error: "Project not found" };
   }
 
-  const data: { name?: string; description?: string | null } = {};
+  const data: { name?: string; description?: string | null; color?: string | null } =
+    {};
   if (input.name !== undefined) data.name = input.name;
   if (input.description !== undefined) {
     data.description = input.description === "" ? null : input.description;
+  }
+  if (input.color !== undefined) {
+    data.color = input.color === "" ? null : input.color;
   }
 
   if (Object.keys(data).length === 0) {

@@ -113,6 +113,7 @@ export async function updateTaskBoardAction(
     description: formData.has("description")
       ? String(formData.get("description"))
       : undefined,
+    statusId: formData.get("statusId") || undefined,
     priorityId: formData.get("priorityId") || undefined,
     labelIds,
     dueDate,

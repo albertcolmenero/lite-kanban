@@ -40,14 +40,16 @@ export function parseTaskFiltersFromSearchParams(
   };
 }
 
-export type BoardViewMode = "grid" | "list";
+export type BoardViewMode = "grid" | "list" | "inbox";
 
-/** Grid layout (kanban board). `view=list` selects the priority list; `kanban`/`grid`/unset default to grid. */
+/** Grid layout (kanban). `view=list` = priority list; `view=inbox` = pending (non-final) tasks; default grid. */
 export function boardViewFromSearchParams(
   sp: Record<string, string | string[] | undefined>,
 ): BoardViewMode {
   const v = spVal(sp, "view");
-  return v === "list" ? "list" : "grid";
+  if (v === "list") return "list";
+  if (v === "inbox") return "inbox";
+  return "grid";
 }
 
 /** Map URLSearchParams to the record shape used by parseTaskFiltersFromSearchParams (API routes). */
